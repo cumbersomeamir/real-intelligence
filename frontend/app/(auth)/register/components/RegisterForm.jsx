@@ -4,9 +4,13 @@
 
 'use client';
 
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { toast } from 'sonner';
 import { registerSchema } from '@/lib/validators';
+import { registerUser } from '@/lib/dataClient';
 import Input from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
 import RoleSelector from '@/app/(auth)/register/components/RoleSelector';
@@ -24,6 +28,9 @@ import EmptyState from '@/components/ui/EmptyState';
  * @returns {JSX.Element} Register form.
  */
 export default function RegisterForm({ onSubmitForm, loading = false, error = null, enabled = true }) {
+  const router = useRouter();
+  const [submitError, setSubmitError] = useState('');
+
   const {
     register,
     control,
@@ -61,7 +68,22 @@ export default function RegisterForm({ onSubmitForm, loading = false, error = nu
     <form
       className="space-y-4"
       onSubmit={handleSubmit(async (values) => {
-        if (onSubmitForm) await onSubmitForm(values);
+        setSubmitError('');
+
+        try {
+          if (onSubmitForm) {
+            await onSubmitForm(values);
+          } else {
+            await registerUser(values);
+            toast.success('Account created');
+            router.push('/dashboard');
+            router.refresh();
+          }
+        } catch (submitErr) {
+          const message = submitErr?.message || 'Unable to create account.';
+          setSubmitError(message);
+          toast.error(message);
+        }
       })}
     >
       <Input label="Full Name" error={errors.name?.message} {...register('name')} />
@@ -75,6 +97,7 @@ export default function RegisterForm({ onSubmitForm, loading = false, error = nu
         )}
       />
       <Input label="Password" type="password" error={errors.password?.message} {...register('password')} />
+      {submitError ? <p className="text-xs text-risk-500">{submitError}</p> : null}
       <Button type="submit" className="w-full" disabled={isSubmitting}>
         {isSubmitting ? 'Creating account...' : 'Create Account'}
       </Button>

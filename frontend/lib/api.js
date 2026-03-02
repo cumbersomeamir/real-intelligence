@@ -1,9 +1,10 @@
 /**
- * @file Axios API client and thin frontend endpoint wrappers.
+ * @file Axios API client and endpoint wrappers.
  */
 
 import axios from 'axios';
 import { BACKEND_URL } from '@/lib/constants';
+import { getAccessToken } from '@/lib/session';
 
 /** Shared axios instance for backend communication. */
 export const apiClient = axios.create({
@@ -12,38 +13,85 @@ export const apiClient = axios.create({
   withCredentials: true
 });
 
+apiClient.interceptors.request.use((config) => {
+  const token = getAccessToken();
+  if (token) {
+    config.headers = config.headers || {};
+    if (!config.headers.Authorization) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+  }
+  return config;
+});
+
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
     const message = error.response?.data?.message || error.message || 'Unexpected API error';
-    return Promise.reject(new Error(message));
+    const normalized = new Error(message);
+    normalized.status = error.response?.status;
+    normalized.data = error.response?.data;
+    return Promise.reject(normalized);
   }
 );
 
 /**
- * Fetches dashboard overview payload.
- * @returns {Promise<any>} API response body.
+ * Performs GET request.
+ * @param {string} path - API path.
+ * @param {Object} [config] - Axios config.
+ * @returns {Promise<any>} Response body.
  */
-export async function getDashboardOverview() {
-  const { data } = await apiClient.get('/analytics/market');
+export async function apiGet(path, config = {}) {
+  const { data } = await apiClient.get(path, config);
   return data;
 }
 
 /**
- * Fetches deals list.
- * @param {Object} params - Query params.
- * @returns {Promise<any>} API response.
+ * Performs POST request.
+ * @param {string} path - API path.
+ * @param {Object} body - Request payload.
+ * @param {Object} [config] - Axios config.
+ * @returns {Promise<any>} Response body.
  */
-export async function getDeals(params = {}) {
-  const { data } = await apiClient.get('/deals', { params });
+export async function apiPost(path, body = {}, config = {}) {
+  const { data } = await apiClient.post(path, body, config);
   return data;
 }
 
 /**
- * Fetches micro-location list.
- * @returns {Promise<any>} API response.
+ * Performs PATCH request.
+ * @param {string} path - API path.
+ * @param {Object} body - Request payload.
+ * @param {Object} [config] - Axios config.
+ * @returns {Promise<any>} Response body.
  */
-export async function getMicroLocations() {
-  const { data } = await apiClient.get('/micro-locations');
+export async function apiPatch(path, body = {}, config = {}) {
+  const { data } = await apiClient.patch(path, body, config);
   return data;
+}
+
+/**
+ * Performs auth login.
+ * @param {Object} payload - Login payload.
+ * @returns {Promise<any>} Auth payload.
+ */
+export function apiLogin(payload) {
+  return apiPost('/auth/login', payload);
+}
+
+/**
+ * Performs auth registration.
+ * @param {Object} payload - Register payload.
+ * @returns {Promise<any>} Auth payload.
+ */
+export function apiRegister(payload) {
+  return apiPost('/auth/register', payload);
+}
+
+/**
+ * Fetches current authenticated profile.
+ * @returns {Promise<any>} User payload.
+ */
+export function apiCurrentUser() {
+  return apiGet('/auth/me');
 }

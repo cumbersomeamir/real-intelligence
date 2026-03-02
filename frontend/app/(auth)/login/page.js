@@ -30,6 +30,7 @@ export default function LoginPage() {
     <main>
       <h1 className="text-3xl font-extrabold">Login</h1>
       <p className="mt-2 text-sm text-surface-600">Sign in with credentials or OTP.</p>
+      <p className="mt-1 text-xs text-surface-500">Demo login: `demo@lucknowpropintel.com` / `password123`</p>
       <Card className="mt-6 space-y-5">
         <LoginForm />
         <SocialLogin />

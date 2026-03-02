@@ -4,7 +4,7 @@
 
 import { notFound } from 'next/navigation';
 import JsonLd from '@/components/common/JsonLd';
-import { blogPosts } from '@/lib/mockData';
+import { getBlogListing, getBlogPost } from '@/lib/dataClient';
 import { buildMetadata, breadcrumbJsonLd } from '@/lib/seo';
 
 /**
@@ -15,7 +15,7 @@ import { buildMetadata, breadcrumbJsonLd } from '@/lib/seo';
  */
 export async function generateMetadata({ params }) {
   const { slug } = await params;
-  const post = blogPosts.find((item) => item.slug === slug);
+  const post = await getBlogPost(slug);
   if (!post) {
     return buildMetadata({ title: 'Post not found', description: 'The requested post was not found.', path: '/blog' });
   }
@@ -30,10 +30,11 @@ export async function generateMetadata({ params }) {
 
 /**
  * Statically generates blog slugs.
- * @returns {Array<{slug:string}>} Static params.
+ * @returns {Promise<Array<{slug:string}>>} Static params.
  */
 export async function generateStaticParams() {
-  return blogPosts.map((post) => ({ slug: post.slug }));
+  const { items } = await getBlogListing();
+  return items.map((post) => ({ slug: post.slug }));
 }
 
 /**
@@ -44,7 +45,7 @@ export async function generateStaticParams() {
  */
 export default async function BlogDetailPage({ params }) {
   const { slug } = await params;
-  const post = blogPosts.find((item) => item.slug === slug);
+  const post = await getBlogPost(slug);
   if (!post) notFound();
 
   return (
@@ -71,9 +72,7 @@ export default async function BlogDetailPage({ params }) {
         <p className="mt-3 text-sm text-surface-500">
           {post.category} · {new Date(post.date).toLocaleDateString('en-IN')} · {post.readTime}
         </p>
-        <p className="mt-6 text-base leading-7 text-surface-700">
-          {post.excerpt} This article explains the underlying data signals, model assumptions, and execution tactics investors can apply immediately. We evaluate micro-location momentum, pricing anomalies, policy context, and risk filters to convert raw listings into decision-grade intelligence.
-        </p>
+        <p className="mt-6 whitespace-pre-line text-base leading-7 text-surface-700">{post.content}</p>
       </article>
     </main>
   );

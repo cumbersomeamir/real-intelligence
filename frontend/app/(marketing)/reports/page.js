@@ -5,8 +5,8 @@
 import Link from 'next/link';
 import Card from '@/components/ui/Card';
 import JsonLd from '@/components/common/JsonLd';
-import { reports } from '@/lib/mockData';
 import { buildMetadata, breadcrumbJsonLd } from '@/lib/seo';
+import { getReports } from '@/lib/dataClient';
 
 /**
  * Metadata for reports listing.
@@ -22,9 +22,11 @@ export async function generateMetadata() {
 
 /**
  * Renders report catalog.
- * @returns {JSX.Element} Reports page.
+ * @returns {Promise<JSX.Element>} Reports page.
  */
-export default function ReportsPage() {
+export default async function ReportsPage() {
+  const reports = await getReports();
+
   return (
     <main className="mx-auto max-w-7xl px-4 py-12">
       <JsonLd
@@ -47,7 +49,9 @@ export default function ReportsPage() {
           <Card key={report.id}>
             <h2 className="text-xl font-bold">{report.title}</h2>
             <p className="mt-2 text-sm text-surface-600">{report.summary}</p>
-            <p className="mt-2 text-sm font-semibold">{report.pages} pages · ₹{report.price.toLocaleString('en-IN')}</p>
+            <p className="mt-2 text-sm font-semibold">
+              {report.pages} pages · ₹{report.price.toLocaleString('en-IN')}
+            </p>
             <Link href={`/reports/${report.id}`} className="mt-4 inline-block text-sm font-semibold text-primary-600">
               Preview report
             </Link>

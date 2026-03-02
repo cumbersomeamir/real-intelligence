@@ -4,10 +4,10 @@
 
 import { notFound } from 'next/navigation';
 import Card from '@/components/ui/Card';
-import Button from '@/components/ui/Button';
 import JsonLd from '@/components/common/JsonLd';
-import { reports } from '@/lib/mockData';
+import PurchaseButton from '@/app/(marketing)/reports/components/PurchaseButton';
 import { buildMetadata, breadcrumbJsonLd } from '@/lib/seo';
+import { getReport, getReports } from '@/lib/dataClient';
 
 /**
  * Generates metadata for report detail.
@@ -17,8 +17,9 @@ import { buildMetadata, breadcrumbJsonLd } from '@/lib/seo';
  */
 export async function generateMetadata({ params }) {
   const { id } = await params;
-  const report = reports.find((item) => item.id === id);
+  const report = await getReport(id);
   if (!report) return buildMetadata({ title: 'Report not found', description: 'Report was not found.', path: '/reports' });
+
   return buildMetadata({
     title: `${report.title} | Report Preview`,
     description: report.summary,
@@ -28,9 +29,10 @@ export async function generateMetadata({ params }) {
 
 /**
  * Generates static params for report pages.
- * @returns {Array<{id:string}>} Params.
+ * @returns {Promise<Array<{id:string}>>} Params.
  */
 export async function generateStaticParams() {
+  const reports = await getReports();
   return reports.map((report) => ({ id: report.id }));
 }
 
@@ -42,7 +44,7 @@ export async function generateStaticParams() {
  */
 export default async function ReportDetailPage({ params }) {
   const { id } = await params;
-  const report = reports.find((item) => item.id === id);
+  const report = await getReport(id);
   if (!report) notFound();
 
   return (
@@ -75,7 +77,7 @@ export default async function ReportDetailPage({ params }) {
           This preview includes methodology, scenario assumptions, and high-level micro-location ranking. Full version includes valuation spreads, downside-risk map, and deal watchlist.
         </p>
         <p className="mt-4 text-sm font-semibold">Price: ₹{report.price.toLocaleString('en-IN')}</p>
-        <Button className="mt-4">Purchase Report</Button>
+        <PurchaseButton reportId={report.id} />
       </Card>
     </main>
   );

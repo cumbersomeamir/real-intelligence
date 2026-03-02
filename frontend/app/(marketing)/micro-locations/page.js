@@ -7,7 +7,7 @@ import Card from '@/components/ui/Card';
 import Badge from '@/components/ui/Badge';
 import JsonLd from '@/components/common/JsonLd';
 import { buildMetadata, breadcrumbJsonLd } from '@/lib/seo';
-import { microLocations } from '@/lib/mockData';
+import { getMicroLocations } from '@/lib/dataClient';
 
 /**
  * Metadata for micro-locations index.
@@ -16,17 +16,18 @@ import { microLocations } from '@/lib/mockData';
 export async function generateMetadata() {
   return buildMetadata({
     title: '50+ Lucknow Micro-Locations, Analyzed',
-    description:
-      'Every neighborhood scored for growth, liquidity, and investment potential. Updated daily.',
+    description: 'Every neighborhood scored for growth, liquidity, and investment potential. Updated daily.',
     path: '/micro-locations'
   });
 }
 
 /**
  * Renders micro-location listing.
- * @returns {JSX.Element} Listing page.
+ * @returns {Promise<JSX.Element>} Listing page.
  */
-export default function MicroLocationsPage() {
+export default async function MicroLocationsPage() {
+  const microLocations = await getMicroLocations();
+
   return (
     <main className="mx-auto max-w-7xl px-4 py-12">
       <JsonLd
@@ -37,13 +38,6 @@ export default function MicroLocationsPage() {
       />
       <h1 className="text-4xl font-extrabold">50+ Lucknow Micro-Locations, Analyzed</h1>
       <p className="mt-3 text-surface-600">Every neighborhood scored for growth, liquidity, and investment potential. Updated daily.</p>
-      <div className="mt-5 flex flex-wrap gap-2 text-xs">
-        {['Growth Score', 'Avg Price', 'Property Type', 'Infrastructure status'].map((filter) => (
-          <span key={filter} className="rounded-full bg-surface-100 px-3 py-1">
-            {filter}
-          </span>
-        ))}
-      </div>
       <section className="mt-8 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {microLocations.map((location) => (
           <Card key={location.slug}>

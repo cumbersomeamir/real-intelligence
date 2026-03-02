@@ -8,7 +8,7 @@ import Card from '@/components/ui/Card';
 import JsonLd from '@/components/common/JsonLd';
 import LineChart from '@/components/charts/LineChart';
 import BarChart from '@/components/charts/BarChart';
-import { deals, getAllMicroLocationSlugs, getLocationBySlug, getRelatedLocations } from '@/lib/mockData';
+import { getMicroLocationDetailPayload, getMicroLocations } from '@/lib/dataClient';
 import { buildMetadata, breadcrumbJsonLd } from '@/lib/seo';
 
 /**
@@ -19,40 +19,26 @@ import { buildMetadata, breadcrumbJsonLd } from '@/lib/seo';
  */
 export async function generateMetadata({ params }) {
   const { slug } = await params;
-  const location = getLocationBySlug(slug);
-  if (!location) return buildMetadata({ title: 'Location not found', description: 'Requested location not found', path: '/micro-locations' });
+  const { location } = await getMicroLocationDetailPayload(slug);
 
-  return {
-    ...buildMetadata({
-      title: `${location.name} Property Analysis | LuckNow PropIntel`,
-      description: `Real-time property intelligence for ${location.name}, Lucknow. Price trends, growth score ${location.growthScore}/100, investment analysis, and undervalued deals.`,
-      keywords: [
-        `${location.name} property prices`,
-        `${location.name} real estate`,
-        'Lucknow property investment',
-        `${location.name} growth potential`
-      ],
-      path: `/micro-locations/${slug}`,
-      openGraph: {
-        title: `${location.name} — Investment Intelligence`,
-        description: `Growth Score: ${location.growthScore}/100. Avg price: ₹${location.avgPricePerSqft}/sqft.`,
-        images: [`/og/locations/${slug}.png`],
-        type: 'article'
-      },
-      twitter: {
-        title: `${location.name} Property Intelligence`,
-        description: `Investment analysis for ${location.name}, Lucknow`
-      }
-    })
-  };
+  if (!location) {
+    return buildMetadata({ title: 'Location not found', description: 'Requested location not found', path: '/micro-locations' });
+  }
+
+  return buildMetadata({
+    title: `${location.name} Property Analysis | LuckNow PropIntel`,
+    description: `Real-time property intelligence for ${location.name}, Lucknow. Price trends, growth score ${location.growthScore}/100, investment analysis, and undervalued deals.`,
+    path: `/micro-locations/${slug}`
+  });
 }
 
 /**
  * Generates static params for location pages.
- * @returns {Array<{slug:string}>} Static route params.
+ * @returns {Promise<Array<{slug:string}>>} Static route params.
  */
 export async function generateStaticParams() {
-  return getAllMicroLocationSlugs().map((slug) => ({ slug }));
+  const locations = await getMicroLocations();
+  return locations.map((location) => ({ slug: location.slug }));
 }
 
 /**
@@ -63,11 +49,15 @@ export async function generateStaticParams() {
  */
 export default async function MicroLocationDetailPage({ params }) {
   const { slug } = await params;
-  const location = getLocationBySlug(slug);
+  const { location, related, topDeals } = await getMicroLocationDetailPayload(slug);
+
   if (!location) notFound();
 
-  const related = getRelatedLocations(slug);
-  const topDeals = deals.filter((deal) => deal.microLocation === location.name).slice(0, 5);
+  const trendSeries = [
+    { name: '30D', value: Number(location.trend30d || 0) },
+    { name: '90D', value: Number(location.trend90d || 0) },
+    { name: '1Y', value: Number(location.trend1y || 0) }
+  ];
 
   return (
     <main className="mx-auto grid max-w-7xl gap-8 px-4 py-12 lg:grid-cols-[1fr_280px]">
@@ -98,21 +88,28 @@ export default async function MicroLocationDetailPage({ params }) {
 
         <section className="mt-8 grid gap-4 lg:grid-cols-2">
           <Card>
-            <h2 className="text-xl font-bold">Price Trend</h2>
-            <LineChart data={[{ name: '6M', value: location.avgPricePerSqft - 420 }, { name: '1Y', value: location.avgPricePerSqft - 220 }, { name: '3Y', value: location.avgPricePerSqft }]} />
+            <h2 className="text-xl font-bold">Price Trend Velocity</h2>
+            <LineChart data={trendSeries} />
           </Card>
           <Card>
-            <h2 className="text-xl font-bold">Transaction Volume</h2>
-            <BarChart data={[{ name: 'Q1', value: 84 }, { name: 'Q2', value: 96 }, { name: 'Q3', value: 108 }, { name: 'Q4', value: 121 }]} />
+            <h2 className="text-xl font-bold">Deal Density</h2>
+            <BarChart
+              data={topDeals.map((deal, index) => ({
+                name: `D${index + 1}`,
+                value: Number(deal.dealScore || 0)
+              }))}
+            />
           </Card>
         </section>
 
         <section className="mt-8">
           <h2 className="text-2xl font-bold">Infrastructure Timeline</h2>
           <div className="mt-4 grid gap-3">
-            {location.infrastructureTimeline.map((item) => (
+            {(location.infrastructureTimeline || []).map((item) => (
               <Card key={`${item.year}-${item.item}`} className="p-4">
-                <p className="text-xs uppercase tracking-wide text-primary-500">{item.year} · {item.status}</p>
+                <p className="text-xs uppercase tracking-wide text-primary-500">
+                  {item.year} · {item.status}
+                </p>
                 <p className="mt-1 text-sm">{item.item}</p>
               </Card>
             ))}
@@ -131,7 +128,7 @@ export default async function MicroLocationDetailPage({ params }) {
                 </tr>
               </thead>
               <tbody>
-                {location.developers.map((dev) => (
+                {(location.developers || []).map((dev) => (
                   <tr key={dev.name} className="border-t border-surface-200">
                     <td className="px-4 py-3">{dev.name}</td>
                     <td className="px-4 py-3">{dev.projects}</td>
@@ -144,20 +141,14 @@ export default async function MicroLocationDetailPage({ params }) {
         </section>
 
         <section className="mt-8">
-          <h2 className="text-2xl font-bold">Rental Yield Estimate</h2>
-          <Card className="mt-4 p-4">
-            <p className="font-mono text-3xl font-bold text-profit-500">{location.rentalYield}%</p>
-            <p className="text-sm text-surface-600">Estimated annual gross rental yield in current market cycle.</p>
-          </Card>
-        </section>
-
-        <section className="mt-8">
-          <h2 className="text-2xl font-bold">Top 5 Current Deals</h2>
+          <h2 className="text-2xl font-bold">Top Current Deals</h2>
           <div className="mt-4 grid gap-3">
             {topDeals.map((deal) => (
               <Card key={deal.id} className="p-4">
                 <h3 className="text-lg font-semibold">{deal.title}</h3>
-                <p className="mt-1 text-sm text-surface-600">Deal Score: {deal.dealScore} · Discount: {deal.discountPercent}% · Price: ₹{deal.price.toLocaleString('en-IN')}</p>
+                <p className="mt-1 text-sm text-surface-600">
+                  Deal Score: {deal.dealScore} · Discount: {deal.discountPercent}% · Price: ₹{deal.price.toLocaleString('en-IN')}
+                </p>
               </Card>
             ))}
           </div>
@@ -171,7 +162,7 @@ export default async function MicroLocationDetailPage({ params }) {
         <section className="mt-8">
           <h2 className="text-2xl font-bold">FAQ</h2>
           <div className="mt-4 grid gap-3">
-            {location.faq.map((item) => (
+            {(location.faq || []).map((item) => (
               <Card key={item.q} className="p-4">
                 <h3 className="font-semibold">{item.q}</h3>
                 <p className="mt-1 text-sm text-surface-600">{item.a}</p>
@@ -189,7 +180,7 @@ export default async function MicroLocationDetailPage({ params }) {
         <Card>
           <h2 className="text-lg font-bold">Related Locations</h2>
           <ul className="mt-3 space-y-2 text-sm">
-            {related.map((item) => (
+            {(related || []).map((item) => (
               <li key={item.slug}>
                 <Link href={`/micro-locations/${item.slug}`} className="text-primary-600">
                   {item.name}

@@ -8,6 +8,8 @@ import { useEffect, useRef, useState } from 'react';
 import { io } from 'socket.io-client';
 import { WS_URL } from '@/lib/constants';
 
+const REALTIME_ENABLED = process.env.NEXT_PUBLIC_ENABLE_REALTIME === 'true';
+
 /**
  * Creates and manages websocket connection.
  * @param {string[]} channels - Channels to subscribe.
@@ -18,6 +20,11 @@ export function useWebSocket(channels = []) {
   const [connected, setConnected] = useState(false);
 
   useEffect(() => {
+    if (!REALTIME_ENABLED) {
+      setConnected(false);
+      return () => null;
+    }
+
     socketRef.current = io(WS_URL, { transports: ['websocket'] });
 
     socketRef.current.on('connect', () => {

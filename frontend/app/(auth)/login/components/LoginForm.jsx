@@ -4,9 +4,13 @@
 
 'use client';
 
+import { useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { toast } from 'sonner';
 import { loginSchema } from '@/lib/validators';
+import { loginUser } from '@/lib/dataClient';
 import Input from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
@@ -23,6 +27,10 @@ import EmptyState from '@/components/ui/EmptyState';
  * @returns {JSX.Element} Login form.
  */
 export default function LoginForm({ onSubmitForm, loading = false, error = null, enabled = true }) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [submitError, setSubmitError] = useState('');
+
   const {
     register,
     handleSubmit,
@@ -53,11 +61,27 @@ export default function LoginForm({ onSubmitForm, loading = false, error = null,
     <form
       className="space-y-4"
       onSubmit={handleSubmit(async (values) => {
-        if (onSubmitForm) await onSubmitForm(values);
+        setSubmitError('');
+
+        try {
+          if (onSubmitForm) {
+            await onSubmitForm(values);
+          } else {
+            await loginUser(values);
+            toast.success('Welcome back');
+            router.push(searchParams.get('next') || '/dashboard');
+            router.refresh();
+          }
+        } catch (submitErr) {
+          const message = submitErr?.message || 'Unable to login.';
+          setSubmitError(message);
+          toast.error(message);
+        }
       })}
     >
       <Input label="Email or Phone" placeholder="you@example.com" error={errors.identifier?.message} {...register('identifier')} />
       <Input label="Password" type="password" placeholder="••••••••" error={errors.password?.message} {...register('password')} />
+      {submitError ? <p className="text-xs text-risk-500">{submitError}</p> : null}
       <Button type="submit" className="w-full" disabled={isSubmitting}>
         {isSubmitting ? 'Signing in...' : 'Login'}
       </Button>

@@ -4,6 +4,7 @@
 
 'use client';
 
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { MARKETING_NAV } from '@/lib/constants';
@@ -15,6 +16,20 @@ import Button from '@/components/ui/Button';
  */
 export default function Navbar() {
   const pathname = usePathname();
+  const [language, setLanguage] = useState('en');
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const stored = window.localStorage.getItem('propintel.language');
+    if (stored) setLanguage(stored);
+  }, []);
+
+  function applyLanguage(value) {
+    setLanguage(value);
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem('propintel.language', value);
+    }
+  }
 
   return (
     <header className="sticky top-0 z-40 border-b border-surface-200/70 bg-white/90 backdrop-blur dark:border-surface-800 dark:bg-surface-950/80">
@@ -37,17 +52,27 @@ export default function Navbar() {
         </nav>
         <div className="flex items-center gap-2">
           <div className="hidden items-center rounded-full border border-surface-300 p-1 text-xs sm:flex">
-            <button type="button" className="rounded-full bg-surface-100 px-2 py-1 font-semibold">
+            <button
+              type="button"
+              className={`rounded-full px-2 py-1 font-semibold ${language === 'en' ? 'bg-surface-100' : 'text-surface-600'}`}
+              onClick={() => applyLanguage('en')}
+            >
               EN
             </button>
-            <button type="button" className="rounded-full px-2 py-1 font-semibold text-surface-600">
+            <button
+              type="button"
+              className={`rounded-full px-2 py-1 font-semibold ${language === 'hi' ? 'bg-surface-100' : 'text-surface-600'}`}
+              onClick={() => applyLanguage('hi')}
+            >
               HI
             </button>
           </div>
           <Link href="/login" className="text-sm font-medium text-surface-700 hover:text-primary-500">
             Login
           </Link>
-          <Button className="hidden sm:inline-flex">Get Started</Button>
+          <Link href="/register" className="hidden sm:inline-flex">
+            <Button>Get Started</Button>
+          </Link>
         </div>
       </div>
     </header>

@@ -6,7 +6,9 @@
 
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
+import { toast } from 'sonner';
 import { contactSchema } from '@/lib/validators';
+import { submitContactLead } from '@/lib/dataClient';
 import Card from '@/components/ui/Card';
 import Input from '@/components/ui/Input';
 import Select from '@/components/ui/Select';
@@ -62,7 +64,9 @@ export default function ContactForm({ loading = false, error = null, enabled = t
       <h2 className="text-xl font-bold">Contact Form</h2>
       <form
         className="mt-4 space-y-4"
-        onSubmit={handleSubmit(async () => {
+        onSubmit={handleSubmit(async (values) => {
+          submitContactLead(values);
+          toast.success('Thanks, we received your message.');
           reset();
         })}
       >

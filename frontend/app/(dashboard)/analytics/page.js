@@ -2,14 +2,7 @@
  * @file Analytics page.
  */
 
-import BreadcrumbNav from '@/components/layout/BreadcrumbNav';
-import MarketOverview from '@/app/(dashboard)/analytics/components/MarketOverview';
-import PriceHeatmap from '@/app/(dashboard)/analytics/components/PriceHeatmap';
-import TrendCharts from '@/app/(dashboard)/analytics/components/TrendCharts';
-import SupplyDemandGraph from '@/app/(dashboard)/analytics/components/SupplyDemandGraph';
-import TopMicroLocations from '@/app/(dashboard)/analytics/components/TopMicroLocations';
-import AIForecast from '@/app/(dashboard)/analytics/components/AIForecast';
-import { microLocations } from '@/lib/mockData';
+import AnalyticsClient from '@/app/(dashboard)/analytics/AnalyticsClient';
 import { buildMetadata } from '@/lib/seo';
 
 /**
@@ -21,22 +14,9 @@ export async function generateMetadata() {
 }
 
 /**
- * Analytics dashboard page.
- * @returns {JSX.Element} Analytics page.
+ * Analytics page wrapper.
+ * @returns {JSX.Element}
  */
 export default function AnalyticsPage() {
-  return (
-    <section className="space-y-6">
-      <BreadcrumbNav items={[{ label: 'Dashboard', href: '/dashboard' }, { label: 'Analytics' }]} />
-      <h1 className="text-3xl font-extrabold">Market Analytics</h1>
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-        <MarketOverview items={['Median Price/Sqft: ₹4,280', 'Liquidity: 74', 'Risk spread: moderate']} />
-        <PriceHeatmap items={microLocations.slice(0, 6).map((item) => `${item.name}: ${item.avgPricePerSqft}`)} />
-        <TrendCharts items={['30d growth +3.6%', '90d growth +8.9%', '1y growth +17.4%']} />
-        <SupplyDemandGraph items={['Supply index 66', 'Demand index 79']} />
-        <TopMicroLocations items={microLocations.slice(0, 5).map((item) => `${item.name} (${item.growthScore})`)} />
-        <AIForecast items={['Expected next-quarter price range: +2.3% to +4.9%', 'Satellite/change detection interface stubbed for phase 2']} />
-      </div>
-    </section>
-  );
+  return <AnalyticsClient />;
 }
