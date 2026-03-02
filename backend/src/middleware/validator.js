@@ -1,0 +1,19 @@
+/**
+ * @file Request validation middleware.
+ */
+
+/**
+ * Validates request body against provided schema.
+ * @param {import('zod').ZodSchema} schema - Zod schema.
+ * @returns {import('express').RequestHandler} Middleware.
+ */
+export function validateBody(schema) {
+  return (req, res, next) => {
+    const result = schema.safeParse(req.body);
+    if (!result.success) {
+      return res.status(400).json({ message: 'Validation failed.', errors: result.error.flatten() });
+    }
+    req.body = result.data;
+    return next();
+  };
+}

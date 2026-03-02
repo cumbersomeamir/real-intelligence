@@ -1,0 +1,53 @@
+@import 'tailwindcss';
+
+:root {
+  --background: #f8fafc;
+  --foreground: #0f172a;
+}
+
+.dark {
+  --background: #020617;
+  --foreground: #f8fafc;
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-body), system-ui, sans-serif;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-display), Georgia, serif;
+}
+
+.data-font {
+  font-family: var(--font-mono), monospace;
+}
+
+.glass {
+  backdrop-filter: blur(20px);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.mesh-bg {
+  background-image:
+    radial-gradient(circle at 20% 20%, rgba(74, 114, 255, 0.18), transparent 30%),
+    radial-gradient(circle at 80% 0%, rgba(245, 184, 0, 0.16), transparent 25%),
+    linear-gradient(180deg, #050b1a 0%, #0f172a 100%);
+}
+
+.light-mesh {
+  background-image:
+    radial-gradient(circle at 10% 20%, rgba(74, 114, 255, 0.2), transparent 30%),
+    radial-gradient(circle at 80% 20%, rgba(245, 184, 0, 0.2), transparent 25%),
+    linear-gradient(180deg, #ffffff 0%, #f1f5f9 100%);
+}
